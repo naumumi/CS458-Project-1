@@ -90,6 +90,11 @@ function Login() {
             {message}
           </div>
         )}
+
+        <p className="mt-3 text-center">
+          Don't have an account? <a href="/register">Register here</a>
+        </p>
+
       </div>
     </div>
   );

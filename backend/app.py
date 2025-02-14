@@ -119,6 +119,71 @@ def google_callback():
     redirect_url = f"http://localhost:3000/welcome?{params}"
     return redirect(redirect_url)
 
+###############################################################################
+# Registration Endpoint
+###############################################################################
+@app.route('/api/register', methods=['POST'])
+def register():
+    try:
+        data = request.get_json()
+        if data is None:
+            return jsonify({"success": False, "message": "Invalid JSON payload."}), 400
+
+        email = data.get("email", "").strip()
+        phone = data.get("phone", "").strip()
+        password = data.get("password", "")
+
+        # Validate: user must supply a password and either email OR phone.
+        if not password or (not email and not phone):
+            return jsonify({"success": False, "message": "Email or phone and password are required."}), 400
+
+        # Check if a user already exists (using either email or phone).
+        query = {}
+        if email:
+            query["email"] = email
+        if phone:
+            query["phone"] = phone
+
+        if users_collection.find_one(query):
+            return jsonify({"success": False, "message": "User already exists."}), 400
+
+        # Hash the password and create the user document.
+        hashed_password = bcrypt.hash(password)
+        user_doc = {"password": hashed_password}
+        if email:
+            user_doc["email"] = email
+        if phone:
+            user_doc["phone"] = phone
+
+        users_collection.insert_one(user_doc)
+        return jsonify({"success": True, "message": "Registration successful."}), 201
+
+    except Exception as e:
+        # Log the error so you can see what went wrong in the server console.
+        print("Error in registration:", e)
+        return jsonify({"success": False, "message": "Internal server error."}), 500
+
+
+###############################################################################
+# SEED ENDPOINT (OPTIONAL) - For Creating a Test User
+###############################################################################
+@app.route('/api/seed_user', methods=['POST'])
+def seed_user():
+    data = request.get_json()
+    email = data.get("email")
+    phone = data.get("phone")
+    password = data.get("password")
+
+    if not (email and password):
+        return jsonify({"success": False, "message": "Missing email or password."}), 400
+
+    hashed_password = bcrypt.hash(password)
+    users_collection.insert_one({
+        "email": email,
+        "phone": phone,
+        "password": hashed_password
+    })
+    return jsonify({"success": True, "message": "Test user seeded."}), 201
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
