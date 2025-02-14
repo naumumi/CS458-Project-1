@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
+import { useNavigate } from 'react-router-dom';
 function Login() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +18,9 @@ function Login() {
       });
       if (response.data.success) {
         setMessage('Login successful!');
-        // Optionally redirect or do more logic
+        setTimeout(() => {
+          navigate('/welcome', { state: { user: identifier } });
+        }, 1000);
       } else {
         setMessage('Login failed: ' + response.data.message);
       }

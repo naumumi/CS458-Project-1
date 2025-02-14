@@ -69,11 +69,13 @@ def google_login():
     return redirect(authorization_url)
 
 
+from urllib.parse import urlencode
+
 @app.route('/api/auth/google/callback')
 def google_callback():
     """
-    2) User returns from Google with a code. Exchange for an access token,
-       retrieve user info, store in DB, and redirect to React with a success message.
+    Step 2: Google redirects back with a code. Exchange code for tokens,
+           get user info, and log them in (create/update DB record).
     """
     google = OAuth2Session(
         GOOGLE_CLIENT_ID,
@@ -81,30 +83,30 @@ def google_callback():
         state=session.get('oauth_state')
     )
 
-    # Exchange the auth code for a token
+    # Exchange the authorization code for a token
     token = google.fetch_token(
         TOKEN_URL,
         client_secret=GOOGLE_CLIENT_SECRET,
         authorization_response=request.url
     )
 
-    # Get user info
+    # Use the token to get user info
     user_info = google.get('https://openidconnect.googleapis.com/v1/userinfo').json()
     email = user_info.get("email")
     google_id = user_info.get("sub")
     name = user_info.get("name", "")
 
     if not email:
-        return jsonify({"success": False, "message": "Could not retrieve email"}), 400
+        return jsonify({"success": False, "message": "Could not retrieve email from Google"}), 400
 
-    # Upsert user in Mongo
+    # Upsert user into MongoDB
     existing_user = users_collection.find_one({"email": email})
     if not existing_user:
         users_collection.insert_one({
             "email": email,
             "google_id": google_id,
             "name": name,
-            "password": None  # no password for Google-based user
+            "password": None  # No password needed for Google-based login
         })
     else:
         users_collection.update_one(
@@ -112,13 +114,11 @@ def google_callback():
             {"$set": {"google_id": google_id, "name": name}}
         )
 
-    # For demonstration: show an alert and redirect to the React app
-    return f"""
-    <script>
-        alert("Google Login successful!\\nUser: {email}");
-        window.location.href = "http://localhost:3000";
-    </script>
-    """
+    # Build the redirect URL with query parameters
+    params = urlencode({"user": email})
+    redirect_url = f"http://localhost:3000/welcome?{params}"
+    return redirect(redirect_url)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

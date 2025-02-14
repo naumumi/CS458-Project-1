@@ -1,14 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Login';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import Welcome from './Welcome';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/welcome" element={<Welcome />} />
       </Routes>
     </Router>
   );
