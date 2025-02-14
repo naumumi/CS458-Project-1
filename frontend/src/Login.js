@@ -11,6 +11,11 @@ function Login() {
     e.preventDefault();
     setMessage('');
 
+
+    if (!identifier.trim() || !password.trim()) {
+      setMessage("Email/Phone and Password are required.");
+      return;
+    }
     try {
       const response = await axios.post('http://localhost:5000/api/login', {
         identifier,
@@ -51,7 +56,7 @@ function Login() {
               placeholder="Enter your email or phone"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              required
+              
             />
           </div>
 
@@ -66,7 +71,7 @@ function Login() {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              
             />
           </div>
 
@@ -86,7 +91,7 @@ function Login() {
         </button>
 
         {message && (
-          <div className="alert alert-info" role="alert">
+          <div className="alert alert-danger" role="alert">
             {message}
           </div>
         )}
