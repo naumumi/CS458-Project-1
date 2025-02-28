@@ -4,10 +4,11 @@ from flask import Flask, request, jsonify, redirect, session
 from flask_cors import CORS
 from passlib.hash import bcrypt
 from requests_oauthlib import OAuth2Session
+from urllib.parse import urlencode
 
 app = Flask(__name__)
 app.secret_key = "YOUR_FLASK_SECRET_KEY"  # replace with a secure key
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # allow http for local testing
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # allow http for local testing
 CORS(app, supports_credentials=True)
 
 # Connect to MongoDB
@@ -15,13 +16,19 @@ mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["login_database"]
 users_collection = db["users"]
 
+###############################################################################
+# In-Memory Failed Login Tracking for Brute Force
+###############################################################################
+failed_login_attempts = {}  # e.g. {"test@example.com": 3, "+1234567890": 2}
+LOCKOUT_THRESHOLD = 5       # After 5 consecutive fails, lock out
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     identifier = data.get('identifier')
     password = data.get('password')
 
-    # Find user by email or phone
+    # Check for existing user
     user = users_collection.find_one({
         "$or": [
             {"email": identifier},
@@ -32,11 +39,28 @@ def login():
     if not user:
         return jsonify({"success": False, "message": "User not found"}), 200
 
+    # Check if user is locked out due to too many attempts
+    if failed_login_attempts.get(identifier, 0) >= LOCKOUT_THRESHOLD:
+        return jsonify({"success": False, "message": "Too many failed attempts"}), 200
+
     # Compare hashed password
-    if bcrypt.verify(password, user["password"]):
+    if user["password"] and bcrypt.verify(password, user["password"]):
+        # Reset attempts on success
+        failed_login_attempts[identifier] = 0
+
+        # Mark session
+        session['logged_in'] = True
+        session['user'] = identifier
         return jsonify({"success": True, "message": "Login successful"}), 200
     else:
-        return jsonify({"success": False, "message": "Invalid password"}), 200
+        # Wrong password, increment attempt count
+        current_attempts = failed_login_attempts.get(identifier, 0) + 1
+        failed_login_attempts[identifier] = current_attempts
+
+        if current_attempts >= LOCKOUT_THRESHOLD:
+            return jsonify({"success": False, "message": "Too many failed attempts"}), 200
+        else:
+            return jsonify({"success": False, "message": "Invalid password"}), 200
 
 ###############################################################################
 # GOOGLE OAUTH
@@ -68,14 +92,11 @@ def google_login():
     session['oauth_state'] = state
     return redirect(authorization_url)
 
-
-from urllib.parse import urlencode
-
 @app.route('/api/auth/google/callback')
 def google_callback():
     """
     Step 2: Google redirects back with a code. Exchange code for tokens,
-           get user info, and log them in (create/update DB record).
+            get user info, and log them in (create/update DB record).
     """
     google = OAuth2Session(
         GOOGLE_CLIENT_ID,
@@ -137,7 +158,7 @@ def register():
         if not password or (not email and not phone):
             return jsonify({"success": False, "message": "Email or phone and password are required."}), 400
 
-        # Check if a user already exists (using either email or phone).
+        # Check if user already exists
         query = {}
         if email:
             query["email"] = email
@@ -159,10 +180,8 @@ def register():
         return jsonify({"success": True, "message": "Registration successful."}), 201
 
     except Exception as e:
-        # Log the error so you can see what went wrong in the server console.
         print("Error in registration:", e)
         return jsonify({"success": False, "message": "Internal server error."}), 500
-
 
 ###############################################################################
 # SEED ENDPOINT (OPTIONAL) - For Creating a Test User
