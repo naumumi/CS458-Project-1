@@ -20,7 +20,7 @@ users_collection = db["users"]
 # In-Memory Failed Login Tracking for Brute Force
 ###############################################################################
 failed_login_attempts = {}  # e.g. {"test@example.com": 3, "+1234567890": 2}
-LOCKOUT_THRESHOLD = 5       # After 5 consecutive fails, lock out
+LOCKOUT_THRESHOLD = 30      # After 5 consecutive fails, lock out
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -203,6 +203,13 @@ def seed_user():
         "password": hashed_password
     })
     return jsonify({"success": True, "message": "Test user seeded."}), 201
+
+@app.route('/api/reset_attempts', methods=['POST'])
+def reset_attempts():
+    global failed_login_attempts
+    failed_login_attempts = {}
+    return jsonify({"success": True, "message": "Attempts reset."}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

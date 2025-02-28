@@ -34,10 +34,8 @@ function Login() {
         
         // Navigate after a short delay
         setTimeout(() => {
-          // For session persistence, you could store a token/flag in localStorage if needed:
-          // localStorage.setItem('isLoggedIn', 'true');
           navigate('/welcome', { state: { user: identifier } });
-        }, 1000);
+        }, 10000);
       } else {
         // Check for "Too many failed attempts"
         if (response.data.message === "Too many failed attempts") {
