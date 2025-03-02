@@ -73,6 +73,7 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         - Tests browser navigation (back/forward) impact on form
         - Tests tab navigation through form elements
         - Checks auto-focus behavior
+        - Checks Google login button initiates correctly
         """
         # A) Initial form state and auto-focus
         self.driver.get(FRONTEND_URL)
@@ -87,7 +88,7 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         active_element.send_keys(Keys.TAB)
         active_element = self.driver.switch_to.active_element
         self.assertEqual(active_element.get_attribute("id"), "password", 
-                         "Tab should move focus from identifier to password")
+                        "Tab should move focus from identifier to password")
         
         # C) Enter values and test page refresh persistence
         test_identifier = "testuser@example.com"
@@ -116,6 +117,16 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         time.sleep(2)
         identifier_value = self.driver.find_element(By.ID, "identifier").get_attribute("value")
         self.assertEqual(identifier_value, "", "Form should reset when navigating back")
+
+        # E) Test Google OAuth Login button navigation
+        self.driver.get(FRONTEND_URL)
+
+        google_button = self.driver.find_element(By.XPATH, "//button[contains(text(),'Login with Google')]")
+        google_button.click()
+
+        time.sleep(3)  # Allow Google OAuth page to load
+        self.assertIn("accounts.google.com", self.driver.current_url, "Google OAuth page should be displayed after clicking login button.")
+
 
     def test_02_input_boundary_testing(self):
         """
@@ -522,16 +533,6 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         # Should login successfully
         message = self.wait_for_alert(css_class=".alert-success")
         self.assertIn("Login successful", message, "Should allow login immediately after registration")
-
-    def test_06_google_login(self):
-        """ 🔄 Test Case 4: Google OAuth Login """
-        self.driver.get(FRONTEND_URL)
-
-        self.driver.find_element(By.XPATH, "//button[contains(text(),'Login with Google')]").click()
-
-        time.sleep(3)  # Wait for Google login page to load
-        # Ensure Google OAuth page
-        self.assertIn("accounts.google.com", self.driver.current_url)
 
 
 if __name__ == "__main__":
