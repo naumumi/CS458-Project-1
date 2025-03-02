@@ -20,14 +20,23 @@ users_collection = db["users"]
 # In-Memory Failed Login Tracking for Brute Force
 ###############################################################################
 failed_login_attempts = {}  # e.g. {"test@example.com": 3, "+1234567890": 2}
-LOCKOUT_THRESHOLD = 30      # After 5 consecutive fails, lock out
+LOCKOUT_THRESHOLD = 5      # After 5 consecutive fails, lock out
 
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     identifier = data.get('identifier')
     password = data.get('password')
-
+    # Add validation for empty fields
+    if not identifier or not password:
+        return jsonify({"success": False, "message": "Email/Phone and Password are required"}), 200
+        
+    # Add validation for input length
+    if len(identifier) > 255:
+        return jsonify({"success": False, "message": "Identifier too long"}), 200
+        
+    if len(password) > 1000:
+        return jsonify({"success": False, "message": "Password too long"}), 200
     # Check for existing user
     user = users_collection.find_one({
         "$or": [

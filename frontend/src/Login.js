@@ -13,15 +13,35 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
+    // Disable multiple form submissions
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
 
-    // Check for empty fields:
-    if (!identifier.trim() || !password.trim()) {
-      setAlertType('danger');
-      setMessage("Email/Phone and Password are required.");
-      return;
-    }
 
     try {
+
+      // Check for empty fields with proper trimming:
+      if (!identifier.trim() || !password.trim()) {
+        setAlertType('danger');
+        setMessage("Email/Phone and Password are required.");
+        submitButton.disabled = false;
+        return;
+      }
+      
+      // Add length validation
+      if (identifier.length > 255) {
+        setAlertType('danger');
+        setMessage("Email/Phone is too long.");
+        submitButton.disabled = false;
+        return;
+      }
+      
+      if (password.length > 1000) {
+        setAlertType('danger');
+        setMessage("Password is too long.");
+        submitButton.disabled = false;
+        return;
+      }
       const response = await axios.post('http://localhost:5000/api/login', {
         identifier,
         password,
@@ -49,6 +69,9 @@ function Login() {
       console.error(err);
       setAlertType('danger');
       setMessage('An error occurred. Please try again.');
+    } finally
+    {
+      submitButton.disabled = false;
     }
   };
 
@@ -73,6 +96,7 @@ function Login() {
               placeholder="Enter your email or phone"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
+              autoFocus
             />
           </div>
 
