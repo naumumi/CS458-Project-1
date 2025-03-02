@@ -40,7 +40,7 @@ Flask-Cors==5.0.0
 fonttools==4.55.3
 fqdn==1.5.1
 fsspec==2024.6.1
-gurobipy==12.0.0
+gurobipy==12.0.1
 h11==0.14.0
 httpcore==1.0.6
 httpx==0.27.2
@@ -110,11 +110,6 @@ pyparsing==3.2.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-json-logger==2.0.7
-pywin32==308
-pywinpty==2.0.13
-PyYAML==6.0.2
-pyzmq==26.2.0
-RapidFuzz==3.12.1
 redis==5.2.0
 referencing==0.35.1
 regex==2024.7.24
@@ -140,8 +135,8 @@ terminado==0.18.1
 threadpoolctl==3.5.0
 tinycss2==1.3.0
 tokenizers==0.21.0
-torch==2.4.1
-torchvision==0.19.1
+torch==2.2.2
+torchvision==0.17.2
 tornado==6.4.1
 tqdm==4.66.5
 traitlets==5.14.3
