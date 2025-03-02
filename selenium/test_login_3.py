@@ -523,5 +523,16 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         message = self.wait_for_alert(css_class=".alert-success")
         self.assertIn("Login successful", message, "Should allow login immediately after registration")
 
+    def test_06_google_login(self):
+        """ 🔄 Test Case 4: Google OAuth Login """
+        self.driver.get(FRONTEND_URL)
+
+        self.driver.find_element(By.XPATH, "//button[contains(text(),'Login with Google')]").click()
+
+        time.sleep(3)  # Wait for Google login page to load
+        # Ensure Google OAuth page
+        self.assertIn("accounts.google.com", self.driver.current_url)
+
+
 if __name__ == "__main__":
     unittest.main()
