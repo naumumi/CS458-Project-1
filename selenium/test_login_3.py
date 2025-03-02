@@ -259,6 +259,89 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         # URL should reflect our manual navigation, not be redirected back to welcome
         self.assertIn("nonexistent-page", self.driver.current_url)
 
+
+    def test_04_security_and_injection_testing(self):
+        """
+        Test Case 4: Advanced Security and Injection Testing
+        - Tests SQL injection attempts (for relational DBs - future proofing)
+        - Tests NoSQL injection attempts (for current MongoDB setup)
+        - Tests HTML injection attempts
+        - Tests JavaScript injection attempts
+        """
+
+        # Reset attempts to start fresh
+        requests.post(f"{BASE_URL}/reset_attempts")
+        self.driver.get(FRONTEND_URL)
+
+        # Section 1: Traditional SQL Injection Simulations (for relational DBs or generic input validation)
+
+        sql_injections = [
+            "' OR '1'='1' --",
+            "' OR ''='",
+            "' OR 1=1 -- -",
+            "' UNION SELECT 1,2,3 --",
+            "') OR ('a'='a"
+        ]
+
+        for injection in sql_injections:
+            self.driver.get(FRONTEND_URL)
+            self.driver.find_element(By.ID, "identifier").clear()
+            self.driver.find_element(By.ID, "identifier").send_keys(injection)
+            self.driver.find_element(By.ID, "password").clear()
+            self.driver.find_element(By.ID, "password").send_keys(TEST_PASSWORD)
+            self.driver.find_element(By.XPATH, "//button[text()='Login']").click()
+
+            message = self.wait_for_alert(css_class=".alert-danger")
+            self.assertIn("User not found", message, 
+                        f"SQL Injection attempt '{injection}' should be rejected.")
+
+        # Section 2: NoSQL Injection Simulations (targeting MongoDB)
+
+        nosql_injections = [
+            '{"$ne": null}',  # Matches any non-null email (bypass filter)
+            '{"$where": "1 == 1"}'  # Potential arbitrary code execution if not sanitized
+        ]
+
+        for injection in nosql_injections:
+            self.driver.get(FRONTEND_URL)
+            self.driver.find_element(By.ID, "identifier").clear()
+            self.driver.find_element(By.ID, "identifier").send_keys(injection)
+            self.driver.find_element(By.ID, "password").clear()
+            self.driver.find_element(By.ID, "password").send_keys(TEST_PASSWORD)
+            self.driver.find_element(By.XPATH, "//button[text()='Login']").click()
+
+            message = self.wait_for_alert(css_class=".alert-danger")
+            self.assertIn("User not found", message,
+                        f"NoSQL Injection attempt '{injection}' should be rejected.")
+
+        # Section 3: HTML Injection (Cross-Site Scripting)
+
+        html_injection = "<script>alert('XSS')</script>@example.com"
+        self.driver.get(FRONTEND_URL)
+        self.driver.find_element(By.ID, "identifier").clear()
+        self.driver.find_element(By.ID, "identifier").send_keys(html_injection)
+        self.driver.find_element(By.ID, "password").clear()
+        self.driver.find_element(By.ID, "password").send_keys(TEST_PASSWORD)
+        self.driver.find_element(By.XPATH, "//button[text()='Login']").click()
+
+        message = self.wait_for_alert(css_class=".alert-danger")
+        self.assertIn("User not found", message, "HTML injection should be treated as invalid user")
+
+        # Section 4: JavaScript Injection (Event Handlers)
+
+        js_attack = 'test@example.com" onmouseover="alert(1)'
+        self.driver.get(FRONTEND_URL)
+        self.driver.find_element(By.ID, "identifier").clear()
+        self.driver.find_element(By.ID, "identifier").send_keys(js_attack)
+        self.driver.find_element(By.ID, "password").clear()
+        self.driver.find_element(By.ID, "password").send_keys(TEST_PASSWORD)
+        self.driver.find_element(By.XPATH, "//button[text()='Login']").click()
+
+        message = self.wait_for_alert(css_class=".alert-danger")
+        self.assertIn("User not found", message, "JavaScript event handler injection should be rejected")
+
+
+    '''
     def test_04_security_and_injection_testing(self):
         """
         Test Case 4: Advanced Security Testing
@@ -317,6 +400,9 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         # Should get "User not found" if properly handled
         message = self.wait_for_alert(css_class=".alert-danger")
         self.assertIn("User not found", message, "JavaScript attack should be treated as invalid user")
+
+
+    '''
 
     def test_05_error_recovery_and_edge_cases(self):
         """
