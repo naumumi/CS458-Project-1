@@ -50,11 +50,21 @@ MONGODB_URI=mongodb://localhost:27017/
 1.  **Install frontend dependencies:**
 cd frontend
 npm install
-npm install axios bootstrap bootstrap-icons react-router-dom
+npm install bootstrap bootstrap-icons 
 
 
 ### Selenium Setup
-1.  **Install selenium dependencies:**
+2. **Create and activate Python virtual environment:**
+
+```bash
+cd selenium
+python -m venv venv
+# On Windows
+venv\Scripts\activate
+# On macOS/Linux
+source venv/bin/activate
+```
+2.  **Install selenium dependencies:**
 cd selenium
 pip install -r requirements.txt
 
