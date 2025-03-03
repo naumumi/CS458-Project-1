@@ -176,7 +176,6 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
     def test_02_input_boundary_testing(self):
         """
         Test Case 2: Input Boundary Testing
-        
         Tests edge cases of input validation:
         - Tests extremely long inputs (email and password)
         - Tests empty inputs and inputs with only whitespace
@@ -184,7 +183,6 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         - Tests minimum input requirements
         """
         self.driver.get(FRONTEND_URL)
-        
         # A) Extremely long email (>255 chars)
         long_email = f"{self.generate_random_string(245)}@example.com"  # 245 + 12 = 257 chars
         self.driver.find_element(By.ID, "identifier").clear()
@@ -203,7 +201,6 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
             )
         except TimeoutException:
             self.fail("No error message shown for extremely long email")
-            
             
         # B) Extremely long password (>1000 chars)
         long_password = self.generate_random_string(1001)
@@ -226,7 +223,7 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         
         message = self.wait_for_alert(css_class=".alert-danger")
         self.assertIn("required", message.lower(), "Spaces-only should trigger required fields validation")
-        
+
         # D) Email with unusual but valid characters
         complex_email = "user+tag-part_special!#$%&'*=?^`{}|~@example.co.uk"
         self.driver.find_element(By.ID, "identifier").clear()
@@ -234,7 +231,6 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         self.driver.find_element(By.ID, "password").clear() 
         self.driver.find_element(By.ID, "password").send_keys(TEST_PASSWORD)
         self.driver.find_element(By.XPATH, "//button[text()='Login']").click()
-        
         # Should get "User not found" (since it's valid format but not registered)
         message = self.wait_for_alert(css_class=".alert-danger")
         self.assertIn("User not found", message, "Complex but valid email should be processed correctly")
@@ -334,7 +330,7 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         requests.post(f"{BASE_URL}/reset_attempts")
         self.driver.get(FRONTEND_URL)
 
-        # Section 1: Traditional SQL Injection Simulations (for relational DBs or generic input validation)
+        # A: Traditional SQL Injection Simulations (for relational DBs or generic input validation)
         sql_injections = [
             "' OR '1'='1' --",
             "' OR ''='",
@@ -355,7 +351,7 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
             self.assertIn("User not found", message, 
                         f"SQL Injection attempt '{injection}' should be rejected.")
 
-        # Section 2: NoSQL Injection Simulations (targeting MongoDB)
+        # B: NoSQL Injection Simulations (targeting MongoDB)
         nosql_injections = [
             '{"$ne": null}',  # Matches any non-null email (bypass filter)
             '{"$where": "1 == 1"}'  # Potential arbitrary code execution if not sanitized
@@ -373,7 +369,7 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
             self.assertIn("User not found", message,
                         f"NoSQL Injection attempt '{injection}' should be rejected.")
 
-        # Section 3: HTML Injection (Cross-Site Scripting)
+        # C: HTML Injection (Cross-Site Scripting)
         html_injection = "<script>alert('XSS')</script>@example.com"
         self.driver.get(FRONTEND_URL)
         self.driver.find_element(By.ID, "identifier").clear()
@@ -385,7 +381,7 @@ class TestAdvancedLoginScenarios(unittest.TestCase):
         message = self.wait_for_alert(css_class=".alert-danger")
         self.assertIn("User not found", message, "HTML injection should be treated as invalid user")
 
-        # Section 4: JavaScript Injection (Event Handlers)
+        # D: JavaScript Injection (Event Handlers)
         js_attack = 'test@example.com" onmouseover="alert(1)'
         self.driver.get(FRONTEND_URL)
         self.driver.find_element(By.ID, "identifier").clear()
